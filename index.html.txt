@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You...</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body { 
+            margin: 0; 
+            background: linear-gradient(-45deg, #FAF6F0, #E8D5C4, #FAF6F0, #D4A373);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite; 
+            color: #5C4B51; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            font-family: 'Playfair Display', serif; 
+            text-align: center;
+            overflow: hidden; 
+            position: relative;
+            transition: all 4s ease;
+        }
+
+        body.sad-theme {
+            background: linear-gradient(-45deg, #1a1a1a, #2c3e50, #1a1a1a, #000000) !important;
+            color: #888888;
+        }
+        body.sad-theme .page-border { border-color: rgba(255, 255, 255, 0.05); }
+        body.sad-theme .corner { border-color: #444; }
+        body.sad-theme .instruction-text { color: #aaaaaa; }
+        body.sad-theme .signature { color: #666666; }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .page-border {
+            position: absolute; top: 20px; left: 20px; right: 20px; bottom: 20px;
+            border: 1px solid rgba(140, 122, 107, 0.2); pointer-events: none; z-index: 10;
+            transition: all 4s ease;
+        }
+        
+        .corner {
+            position: absolute; width: 30px; height: 30px; border-color: #8C7A6B; border-style: solid;
+            transition: all 4s ease;
+        }
+        .corner-tl { top: -4px; left: -4px; border-width: 2px 0 0 2px; }
+        .corner-tr { top: -4px; right: -4px; border-width: 2px 2px 0 0; }
+        .corner-bl { bottom: -4px; left: -4px; border-width: 0 0 2px 2px; }
+        .corner-br { bottom: -4px; right: -4px; border-width: 0 2px 2px 0; }
+
+        .fade-in { animation: fadeIn 2s ease-in-out forwards; opacity: 0; }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        #envelope-screen { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #FAF6F0; display: flex; flex-direction: column; 
+            justify-content: center; align-items: center; z-index: 20; 
+            transition: opacity 1.5s ease; 
+        }
+        .env-wrapper {
+            position: relative; width: 280px; height: 180px; background: #E8D5C4; cursor: pointer;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.12); margin-bottom: 40px;
+        }
+        .env-pocket {
+            position: absolute; bottom: 0; left: 0; width: 0; height: 0;
+            border-left: 140px solid #D4A373; border-right: 140px solid #D4A373;
+            border-bottom: 95px solid #C49A6C; z-index: 2; pointer-events: none;
+        }
+        .env-flap {
+            position: absolute; top: 0; left: 0; width: 0; height: 0;
+            border-left: 140px solid transparent; border-right: 140px solid transparent;
+            border-top: 100px solid #B58A5C; transform-origin: top; 
+            transition: transform 0.8s ease-in-out; z-index: 3; pointer-events: none;
+        }
+        .env-seal {
+            position: absolute; left: 50%; top: 100px; transform: translate(-50%, -50%);
+            width: 45px; height: 45px; background: #8C2727; border-radius: 50%; z-index: 4;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); transition: opacity 0.3s ease; pointer-events: none;
+        }
+        .env-wrapper.open .env-flap { transform: rotateX(180deg); }
+        .env-wrapper.open .env-seal { opacity: 0; }
+        .env-text { font-size: 19px; color: #8C7A6B; letter-spacing: 0.5px; margin-top: 20px;}
+
+        #main-content { display: none; padding: 20px; max-width: 400px; width: 100%; z-index: 10; position: relative; }
+
+        .custom-player { margin: 10px auto 25px auto; display: flex; flex-direction: column; align-items: center; position: relative; z-index: 2; }
+        
+        .turntable-base {
+            width: 160px; height: 160px; background: #5C4B51; border-radius: 10px;
+            margin: 20px auto; position: relative; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .tonearm {
+            position: absolute; top: 20px; right: 20px; width: 6px; height: 70px;
+            background: #D4A373; transform-origin: top center;
+            transform: rotate(45deg); transition: transform 1s ease-in-out; z-index: 5;
+        }
+        .tonearm.playing { transform: rotate(15deg); }
+
+        .vinyl-container {
+            width: 110px; height: 110px; border-radius: 50%; border: 3px solid #2A2A2A; 
+            position: relative; overflow: hidden; background-color: #111;
+        }
+        .vinyl-container::after {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 12px; height: 12px; background: #FAF6F0; border-radius: 50%; z-index: 2;
+        }
+        .vinyl-cover { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; animation: spin 4s linear infinite; animation-play-state: paused; opacity: 0.95; }
+        .vinyl-cover.playing { animation-play-state: running; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .song-info { margin-top: 15px; }
+        .song-title { font-size: 18px; font-weight: bold; margin: 0; color: #5C4B51; }
+        .song-artist { font-size: 14px; margin: 5px 0 0 0; color: #8C7A6B; }
+
+        .instruction-text { font-family: 'Caveat', cursive; font-size: 26px; margin: 25px 0 20px 0; line-height: 1.4; color: #4A3C40; min-height: 80px; transition: color 4s ease; }
+        #typewriter-text { border-right: 2px solid #8C7A6B; padding-right: 2px; animation: blinkCursor 0.75s step-end infinite; }
+        @keyframes blinkCursor { from, to { border-color: transparent; } 50% { border-color: #8C7A6B; } }
+
+        #action-section { display: none; }
+        .question-text { font-size: 22px; font-family: 'Caveat', cursive; margin-bottom: 25px; color: #8C7A6B; }
+
+        #thank-you-content { display: none; padding: 20px; max-width: 400px; z-index: 10; position: relative; }
+
+        .buttons { margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 15px; }
+        button { 
+            padding: 10px 35px; border: 1px solid #D4A373; border-radius: 30px; 
+            font-size: 16px; font-family: 'Playfair Display', serif; cursor: pointer; 
+            transition: all 0.3s ease; background: transparent; color: #D4A373;
+        }
+        button.yes { background: #D4A373; color: white; }
+        button:hover { transform: scale(1.05); }
+
+        .signature {
+            font-size: 11px;
+            font-family: monospace; 
+            color: #8C7A6B;
+            opacity: 0.5; 
+            margin-top: 50px;
+            letter-spacing: 1.5px;
+            transition: color 4s ease;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-border">
+    <div class="corner corner-tl"></div>
+    <div class="corner corner-tr"></div>
+    <div class="corner corner-bl"></div>
+    <div class="corner corner-br"></div>
+</div>
+
+<audio id="bg-music" src="sarki.mp3"></audio>
+
+<div id="envelope-screen">
+    <div class="env-wrapper fade-in" onclick="openEnvelope()">
+        <div class="env-flap"></div>
+        <div class="env-pocket"></div>
+        <div class="env-seal"></div>
+    </div>
+    <p class="env-text fade-in" style="animation-delay: 0.5s;">Hazır olduğunda telefonun sesini açıp, küçük bir anı başlatmak için dokunman yeterli.</p>
+</div>
+
+<div id="main-content">
+    <div class="custom-player fade-in">
+        <div class="turntable-base">
+            <div class="tonearm" id="arm"></div>
+            <div class="vinyl-container">
+                <img src="https://i.ibb.co/B2qP9mhc/b539a3d1bdfe8268ac0cc512c5df4806-1000x1000x1.jpg" class="vinyl-cover" id="vinyl">
+            </div>
+        </div>
+        <div class="song-info">
+            <p class="song-title">Haydi Gel Benimle Ol</p>
+            <p class="song-artist">Sezen Aksu</p>
+        </div>
+    </div>
+
+    <p class="instruction-text fade-in" style="animation-delay: 1.0s;">
+        <span id="typewriter-text"></span>
+    </p>
+
+    <div id="action-section">
+        <p class="question-text">Notu okuduktan sonra, cevabını bekliyorum:</p>
+        <div class="buttons">
+            <button class="yes" onclick="reply('Evet')">Evet</button>
+            <button class="no" onclick="reply('Hayır')">Hayır</button>
+        </div>
+    </div>
+</div>
+
+<div id="thank-you-content" class="fade-in">
+    <p class="instruction-text" id="final-message"></p>
+    <p class="signature">Specially coded for you by N.C.</p>
+</div>
+
+<script>
+    const textToType = "Bazen en güzel cümleler dijitalde değil,\nkağıt kalemle ifade edilir...\nKitabın son sayfasını açar mısın?";
+    let i = 0;
+
+    function typeWriter() {
+        if (i < textToType.length) {
+            let char = textToType.charAt(i);
+            if (char === '\n') {
+                document.getElementById("typewriter-text").innerHTML += '<br>';
+            } else {
+                document.getElementById("typewriter-text").innerHTML += char;
+            }
+            i++;
+            setTimeout(typeWriter, 80); 
+        } else {
+            document.getElementById("typewriter-text").style.borderRight = "none";
+            setTimeout(() => {
+                let actionSec = document.getElementById("action-section");
+                actionSec.style.display = "block";
+                actionSec.classList.add("fade-in");
+            }, 1500); 
+        }
+    }
+
+    let isOpened = false;
+    function openEnvelope() {
+        if(isOpened) return;
+        isOpened = true;
+
+        let envelope = document.querySelector('.env-wrapper');
+        let overlay = document.getElementById('envelope-screen');
+        let music = document.getElementById('bg-music');
+        let vinyl = document.getElementById('vinyl');
+        let arm = document.getElementById('arm');
+
+        envelope.classList.add('open');
+        arm.classList.add('playing');
+        music.play().then(() => { vinyl.classList.add('playing'); });
+
+        setTimeout(() => { overlay.style.opacity = '0'; }, 1200);
+
+        setTimeout(() => {
+            overlay.style.display = 'none'; 
+            document.getElementById('main-content').style.display = 'block'; 
+            setTimeout(typeWriter, 2000); 
+        }, 2700);
+    }
+
+    function fireConfetti() {
+        var duration = 3000;
+        var end = Date.now() + duration;
+        (function frame() {
+            confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#D4A373', '#E8D5C4', '#FFFFFF'] });
+            confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#D4A373', '#E8D5C4', '#FFFFFF'] });
+            if (Date.now() < end) { requestAnimationFrame(frame); }
+        }());
+    }
+
+    function reply(answer) {
+        fetch("https://formspree.io/f/xvznzqzq", {
+            method: "POST",
+            body: JSON.stringify({ choice: answer }),
+            headers: { 'Content-Type': 'application/json' }
+        }).then(() => {
+            document.getElementById('main-content').style.display = 'none';
+            let finalMsgElement = document.getElementById('final-message');
+            let music = document.getElementById('bg-music');
+            
+            if (answer === 'Evet') {
+                fireConfetti();
+                finalMsgElement.innerHTML = "Cevabın bana ulaştı. Müsait olduğun bir gün için senden haber bekliyorum. :)";
+            } else {
+                document.body.classList.add('sad-theme'); 
+                music.playbackRate = 0.7;
+                let fadeOutAudio = setInterval(() => {
+                    if (music.volume > 0.02) { music.volume -= 0.02; } 
+                    else { music.volume = 0; music.pause(); clearInterval(fadeOutAudio); }
+                }, 100); 
+                finalMsgElement.innerHTML = "Canın sağ olsun... Yine de vakit ayırdığın ve eşlik ettiğin için teşekkür ederim. Not sende kalabilir. :)";
+            }
+            document.getElementById('thank-you-content').style.display = 'block';
+        });
+    }
+</script>
+</body>
+</html>
